@@ -2,151 +2,110 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Solar Energy Analyzer", layout="wide")
+st.set_page_config(page_title="Solar Panel Efficiency Analyzer", layout="wide")
 
 st.title("🌞 Solar Panel Efficiency & Power Generation Analyzer")
-st.markdown("Advanced analysis of solar performance, financial savings & system health")
 
-# -------------------------
-# SIDEBAR INPUTS
-# -------------------------
-st.sidebar.header("🔧 System Inputs")
+st.markdown("This system analyzes solar panel performance, energy generation, savings and environmental impact.")
 
-area = st.sidebar.number_input("Panel Area (m²)", min_value=0.1, value=1.6)
-irradiance = st.sidebar.number_input("Solar Irradiance (W/m²)", min_value=100.0, value=1000.0)
+# ---------------- USER INPUTS ----------------
+st.sidebar.header("Enter System Details")
+
+area = st.sidebar.number_input("Panel Area (m²)", min_value=1.0, value=10.0)
+irradiance = st.sidebar.number_input("Solar Irradiance (W/m²)", min_value=200.0, value=1000.0)
 efficiency = st.sidebar.slider("Panel Efficiency (%)", 5, 30, 18)
-temperature = st.sidebar.slider("Panel Temperature (°C)", 0, 60, 25)
-sun_hours = st.sidebar.number_input("Sunlight Hours per Day", min_value=1.0, value=5.5)
-electricity_rate = st.sidebar.number_input("Electricity Rate (₹/kWh)", value=6.0)
-installation_cost = st.sidebar.number_input("Total Installation Cost (₹)", value=80000.0)
+temperature = st.sidebar.number_input("Temperature (°C)", min_value=0.0, value=30.0)
+sun_hours = st.sidebar.slider("Sunlight Hours per Day", 1, 12, 6)
 
-# -------------------------
-# CALCULATIONS
-# -------------------------
+# ---------------- CALCULATIONS ----------------
+efficiency = efficiency / 100
 
-eff = efficiency / 100
-temp_coefficient = -0.004
-adjusted_eff = eff * (1 + temp_coefficient * (temperature - 25))
+temp_loss = max(0, (temperature - 25) * 0.005)
+adjusted_efficiency = efficiency * (1 - temp_loss)
 
-power_output = area * irradiance * adjusted_eff
+power_output = irradiance * area * adjusted_efficiency
 daily_energy = power_output * sun_hours / 1000
 monthly_energy = daily_energy * 30
 yearly_energy = daily_energy * 365
 
-annual_savings = yearly_energy * electricity_rate
-co2_saved = yearly_energy * 0.82
+electricity_rate = 6
+yearly_savings = yearly_energy * electricity_rate
+co2_reduction = yearly_energy * 0.82
 
-# ROI & Payback
-if annual_savings > 0:
-    payback_period = installation_cost / annual_savings
-else:
-    payback_period = 0
+# ---------------- RESULTS ----------------
+st.subheader("📊 System Performance Results")
 
-roi = (annual_savings / installation_cost) * 100 if installation_cost > 0 else 0
+st.write(f"🔋 Adjusted Efficiency: {adjusted_efficiency*100:.2f}%")
+st.write(f"⚡ Power Output: {power_output:.2f} W")
+st.write(f"📅 Daily Energy: {daily_energy:.2f} kWh")
+st.write(f"📆 Monthly Energy: {monthly_energy:.2f} kWh")
+st.write(f"📈 Yearly Energy: {yearly_energy:.2f} kWh")
+st.write(f"💰 Estimated Yearly Savings: ₹ {yearly_savings:.2f}")
+st.write(f"🌱 CO₂ Reduction per Year: {co2_reduction:.2f} kg")
 
-# -------------------------
-# RESULTS SECTION
-# -------------------------
-
-st.subheader("📊 Energy Production")
-
-col1, col2, col3 = st.columns(3)
-col1.metric("Power Output (W)", f"{power_output:.2f}")
-col2.metric("Daily Energy (kWh)", f"{daily_energy:.2f}")
-col3.metric("Yearly Energy (kWh)", f"{yearly_energy:.2f}")
-
-st.subheader("🌍 Environmental Impact")
-st.write(f"🌱 CO₂ Saved Per Year: **{co2_saved:.2f} kg**")
-
-st.subheader("💰 Financial Analysis")
-st.write(f"💵 Annual Savings: **₹{annual_savings:.2f}**")
-st.write(f"📈 ROI: **{roi:.2f}%**")
-st.write(f"⏳ Payback Period: **{payback_period:.2f} years**")
-
-# -------------------------
-# SYSTEM RATING
-# -------------------------
-
-st.subheader("⚙️ System Performance Rating")
-
-if adjusted_eff > 0.19:
-    st.success("🟢 Excellent System Performance")
-elif adjusted_eff > 0.15:
-    st.warning("🟡 Moderate Performance")
-else:
-    st.error("🔴 Low Performance – Improvement Needed")
-
-# -------------------------
-# SMART ADVICE
-# -------------------------
-
-st.subheader("💡 Smart Recommendations")
+# ---------------- ADVICE ----------------
+st.subheader("💡 Recommendations")
 
 if temperature > 35:
-    st.warning("High temperature reduces efficiency. Improve ventilation or cooling.")
+    st.warning("High temperature detected. Efficiency decreases at high temperatures. Consider ventilation or cooling systems.")
 
-if irradiance < 600:
-    st.info("Low irradiance detected. Solar trackers can improve sunlight capture.")
+if sun_hours < 4:
+    st.info("Low sunlight hours. Installing panels at optimal tilt angle may improve output.")
 
-if efficiency < 15:
-    st.error("Consider upgrading to higher efficiency panels (Monocrystalline).")
+if adjusted_efficiency < 0.15:
+    st.error("Panel efficiency is low. Upgrading to higher efficiency panels is recommended.")
 
-if payback_period > 7:
-    st.info("Try government subsidies or reduce installation cost for faster ROI.")
+if adjusted_efficiency >= 0.18:
+    st.success("Your system is operating efficiently. Good performance!")
 
-if daily_energy > 10:
-    st.success("System generating strong daily energy output!")
+# ---------------- GRAPHS ----------------
+st.subheader("📈 Graphical Analysis")
 
-# -------------------------
-# GRAPHS SECTION
-# -------------------------
+# -------- Graph 1 --------
+fig1 = plt.figure()
+energy_values = [daily_energy, monthly_energy, yearly_energy]
+labels = ["Daily", "Monthly", "Yearly"]
+plt.bar(labels, energy_values)
+plt.xlabel("Time Period")
+plt.ylabel("Energy (kWh)")
+plt.title("Energy Production Comparison")
+st.pyplot(fig1)
 
-st.subheader("📈 Performance Graphs")
+st.markdown("""
+**Explanation:**  
+This graph compares daily, monthly, and yearly energy production.  
+It shows how small daily energy generation accumulates into large annual output, demonstrating long-term benefits of solar installation.
+""")
 
-# 1. Temperature vs Efficiency
-temps = np.linspace(0, 60, 100)
-eff_values = eff * (1 + temp_coefficient * (temps - 25))
-
-plt.figure()
-plt.plot(temps, eff_values * 100)
+# -------- Graph 2 --------
+fig2 = plt.figure()
+temp_range = np.arange(0, 60, 1)
+eff_range = efficiency * (1 - np.maximum(0, (temp_range - 25) * 0.005))
+plt.plot(temp_range, eff_range * 100)
 plt.xlabel("Temperature (°C)")
 plt.ylabel("Efficiency (%)")
-plt.title("Temperature vs Efficiency")
-st.pyplot(plt)
+plt.title("Efficiency vs Temperature")
+st.pyplot(fig2)
 
-# 2. Irradiance vs Power
-irr_range = np.linspace(200, 1200, 100)
-power_range = area * irr_range * adjusted_eff
+st.markdown("""
+**Explanation:**  
+This graph shows how solar panel efficiency decreases as temperature increases.  
+Panels perform best around 25°C. Higher temperatures cause efficiency loss due to increased internal resistance.
+""")
 
-plt.figure()
-plt.plot(irr_range, power_range)
-plt.xlabel("Irradiance (W/m²)")
-plt.ylabel("Power Output (W)")
-plt.title("Irradiance vs Power Output")
-st.pyplot(plt)
+# -------- Graph 3 --------
+fig3 = plt.figure()
+values = [yearly_savings, co2_reduction]
+labels = ["Yearly Savings (₹)", "CO₂ Reduction (kg)"]
+plt.bar(labels, values)
+plt.title("Financial & Environmental Impact")
+st.pyplot(fig3)
 
-# 3. Monthly Energy Projection (Seasonal Variation)
-months = np.arange(1, 13)
-season_factor = 0.8 + 0.4 * np.sin((months - 1) * np.pi / 6)
-monthly_projection = daily_energy * 30 * season_factor
-
-plt.figure()
-plt.plot(months, monthly_projection)
-plt.xlabel("Month")
-plt.ylabel("Energy (kWh)")
-plt.title("Estimated Monthly Energy Production")
-st.pyplot(plt)
-
-# 4. Savings Growth Over 10 Years
-years = np.arange(1, 11)
-savings_projection = annual_savings * years
-
-plt.figure()
-plt.plot(years, savings_projection)
-plt.xlabel("Year")
-plt.ylabel("Total Savings (₹)")
-plt.title("10-Year Savings Projection")
-st.pyplot(plt)
+st.markdown("""
+**Explanation:**  
+This graph compares financial savings and environmental benefits.  
+It highlights how solar panels not only reduce electricity costs but also significantly decrease carbon emissions annually.
+""")
 
 st.markdown("---")
-st.markdown("🌞 Developed as a Professional Renewable Energy Engineering Model")
+st.markdown("Developed for Renewable Energy Performance Analysis 🌞")
